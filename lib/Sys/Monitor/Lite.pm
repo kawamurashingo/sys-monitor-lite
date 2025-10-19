@@ -84,7 +84,14 @@ sub _load_average {
 }
 
 sub _memory_usage {
-    open my $fh, '<', '/proc/meminfo' or return {};
+    my $data = _memory_usage_proc();
+    $data ||= _memory_usage_sysctl();
+    $data ||= _memory_usage_fallback();
+    return $data;
+}
+
+sub _memory_usage_proc {
+    open my $fh, '<', '/proc/meminfo' or return undef;
     my %info;
     while (my $line = <$fh>) {
         next unless $line =~ /^(\w+):\s+(\d+)/;
@@ -115,6 +122,60 @@ sub _memory_usage {
             used_bytes  => $swap_used,
             free_bytes  => $swap_free,
             used_pct    => _percent($swap_used, $swap_total),
+        },
+    };
+}
+
+sub _memory_usage_sysctl {
+    my $total = _run_sysctl('hw.memsize');
+    return undef unless defined $total && looks_like_number($total);
+
+    my $pagesize = _run_sysctl('hw.pagesize');
+    $pagesize = 4096 unless defined $pagesize && looks_like_number($pagesize) && $pagesize > 0;
+
+    my %vm_stats = _vm_stat_pages();
+    my $free_pages   = ($vm_stats{'Pages free'} // 0) + ($vm_stats{'Pages speculative'} // 0);
+    my $inactive     = $vm_stats{'Pages inactive'} // 0;
+    my $cached_bytes = $inactive * $pagesize;
+    my $free_bytes   = $free_pages * $pagesize;
+    my $available    = $free_bytes + $cached_bytes;
+    $available = $total if $available <= 0 || $available > $total;
+    my $used         = $total - $available;
+    $used = 0 if $used < 0;
+
+    my ($swap_total, $swap_used, $swap_free) = _sysctl_swap_usage();
+
+    return {
+        total_bytes      => $total + 0,
+        available_bytes  => $available + 0,
+        used_bytes       => $used + 0,
+        free_bytes       => $free_bytes + 0,
+        buffers_bytes    => 0,
+        cached_bytes     => $cached_bytes + 0,
+        used_pct         => _percent($used, $total),
+        swap             => {
+            total_bytes => $swap_total,
+            used_bytes  => $swap_used,
+            free_bytes  => $swap_free,
+            used_pct    => _percent($swap_used, $swap_total),
+        },
+    };
+}
+
+sub _memory_usage_fallback {
+    return {
+        total_bytes      => 0,
+        available_bytes  => 0,
+        used_bytes       => 0,
+        free_bytes       => 0,
+        buffers_bytes    => 0,
+        cached_bytes     => 0,
+        used_pct         => 0,
+        swap             => {
+            total_bytes => 0,
+            used_bytes  => 0,
+            free_bytes  => 0,
+            used_pct    => 0,
         },
     };
 }
@@ -340,6 +401,74 @@ sub _maybe_number {
     my ($value) = @_;
     return undef unless defined $value;
     return looks_like_number($value) ? 0 + $value : $value;
+}
+
+sub _run_sysctl {
+    my ($key) = @_;
+    return undef unless defined $key && length $key;
+    my $output = qx{sysctl -n $key 2>/dev/null};
+    return undef if $? != 0;
+    $output =~ s/^\s+//;
+    $output =~ s/\s+$//;
+    return undef unless length $output;
+    return _maybe_number($output);
+}
+
+sub _vm_stat_pages {
+    my %stats;
+    my $output = qx{vm_stat 2>/dev/null};
+    return %stats if $? != 0;
+    for my $line (split /\n/, $output) {
+        next unless $line =~ /^([^:]+):\s+(\d+)/;
+        my ($key, $value) = ($1, $2);
+        $key =~ s/\s+$//;
+        $stats{$key} = $value;
+    }
+    return %stats;
+}
+
+sub _sysctl_swap_usage {
+    my $output = qx{sysctl vm.swapusage 2>/dev/null};
+    return (0, 0, 0) if $? != 0;
+
+    my ($total) = $output =~ /total = ([^,]+)/;
+    my ($used)  = $output =~ /used = ([^,]+)/;
+    my ($free)  = $output =~ /free = ([^,\s]+)/;
+
+    return (
+        _parse_size_with_units($total),
+        _parse_size_with_units($used),
+        _parse_size_with_units($free),
+    );
+}
+
+sub _parse_size_with_units {
+    my ($value) = @_;
+    return 0 unless defined $value;
+    $value =~ s/^\s+//;
+    $value =~ s/\s+$//;
+    return 0 unless length $value;
+
+    if ($value =~ /^([0-9]+(?:\.[0-9]+)?)\s*([KMGTPEZY]?)(i?)B/i) {
+        my ($num, $unit, $binary) = ($1, uc($2 // ''), $3 // '');
+        my %pow = (
+            '' => 0,
+            K  => 1,
+            M  => 2,
+            G  => 3,
+            T  => 4,
+            P  => 5,
+            E  => 6,
+            Z  => 7,
+            Y  => 8,
+        );
+        my $exp = $pow{$unit} // 0;
+        my $base = $binary ? 1024 : 1000;
+        my $bytes = ($num + 0) * ($base ** $exp);
+        return int($bytes + 0.5);
+    }
+
+    return _maybe_number($value) // 0;
 }
 
 sub _human_bytes {
