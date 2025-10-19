@@ -120,46 +120,66 @@ sub _memory_usage {
 }
 
 sub _disk_usage {
-    open my $fh, '<', '/proc/mounts' or return [];
     my %seen;
     my @disks;
     my $has_statvfs = POSIX->can('statvfs');
-    my $df_stats    = $has_statvfs ? undef : _df_stats();
-    while (my $line = <$fh>) {
-        my ($device, $mount, $type) = (split /\s+/, $line)[0..2];
-        next if $seen{$mount}++;
-        next if $mount =~ m{^/(?:proc|sys|dev|run|snap)};
-        next if $type =~ /^(?:proc|sysfs|tmpfs|devtmpfs|cgroup.+|rpc_pipefs|overlay)$/;
-        next unless defined $mount && length $mount;
-        next unless -d $mount;
+    my $df_stats    = _df_stats();
 
-        my ($total, $used, $free);
-        if ($has_statvfs) {
-            my @stat = eval { POSIX::statvfs($mount) };
-            next unless @stat;
-            my ($bsize, $frsize, $blocks, $bfree, $bavail) = @stat;
-            $total = $blocks * $frsize;
-            $free  = $bavail * $frsize;
-            $used  = $total - ($bfree * $frsize);
-        } else {
-            my $info = $df_stats->{$mount};
-            next unless $info;
-            $total = $info->{total};
-            $used  = $info->{used};
-            $free  = $info->{avail};
+    if (open my $fh, '<', '/proc/mounts') {
+        while (my $line = <$fh>) {
+            my ($device, $mount, $type) = (split /\s+/, $line)[0..2];
+            next if $seen{$mount}++;
+            next if $mount =~ m{^/(?:proc|sys|dev|run|snap)};
+            next if $type =~ /^(?:proc|sysfs|tmpfs|devtmpfs|cgroup.+|rpc_pipefs|overlay)$/;
+            next unless defined $mount && length $mount;
+            next unless -d $mount;
+
+            my ($total, $used, $free);
+            if ($has_statvfs) {
+                my @stat = eval { POSIX::statvfs($mount) };
+                next unless @stat;
+                my ($bsize, $frsize, $blocks, $bfree, $bavail) = @stat;
+                $total = $blocks * $frsize;
+                $free  = $bavail * $frsize;
+                $used  = $total - ($bfree * $frsize);
+            } else {
+                my $info = $df_stats->{$mount};
+                next unless $info;
+                $total = $info->{total};
+                $used  = $info->{used};
+                $free  = $info->{avail};
+            }
+
+            push @disks, {
+                mount        => $mount,
+                filesystem   => $device,
+                type         => $type,
+                total_bytes  => $total,
+                used_bytes   => $used,
+                free_bytes   => $free,
+                used_pct     => _percent($used, $total),
+            };
         }
-
-        push @disks, {
-            mount        => $mount,
-            filesystem   => $device,
-            type         => $type,
-            total_bytes  => $total,
-            used_bytes   => $used,
-            free_bytes   => $free,
-            used_pct     => _percent($used, $total),
-        };
+        close $fh;
     }
-    close $fh;
+
+    if (!@disks && $df_stats && %$df_stats) {
+        for my $mount (sort keys %$df_stats) {
+            next if $seen{$mount}++;
+            my $info = $df_stats->{$mount};
+            next unless $info->{total};
+            push @disks, {
+                mount        => $mount,
+                filesystem   => $info->{filesystem},
+                type         => $info->{type} // 'unknown',
+                total_bytes  => $info->{total},
+                used_bytes   => $info->{used},
+                free_bytes   => $info->{avail},
+                used_pct     => _percent($info->{used}, $info->{total}),
+            };
+        }
+    }
+
     return \@disks;
 }
 
@@ -201,6 +221,7 @@ sub _df_stats {
         next unless defined $mount && defined $total && defined $used_bytes && defined $avail_bytes;
         $stats{$mount} = {
             filesystem => $fs,
+            type       => 'unknown',
             total      => $total * 1024,
             used       => $used_bytes * 1024,
             avail      => $avail_bytes * 1024,
