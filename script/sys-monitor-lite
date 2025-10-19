@@ -109,4 +109,12 @@ Show this help message.
 
 =back
 
+=head1 AUTHOR
+
+Shingo Kawamura E<lt>kawamurashingo@cpan.orgE<gt>
+
+=head1 COPYRIGHT AND LICENSE
+
+MIT License. See the F<LICENSE> file bundled with this distribution.
+
 

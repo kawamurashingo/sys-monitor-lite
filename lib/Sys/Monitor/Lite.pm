@@ -276,3 +276,54 @@ Sys::Monitor::Lite - Lightweight system monitoring toolkit with JSON output
 A minimal system monitor that outputs structured JSON data
 for easy automation and integration with jq-lite.
 
+=head1 FUNCTIONS
+
+=head2 collect_all
+
+    my $data = Sys::Monitor::Lite::collect_all();
+
+Collects all available metrics and returns a hash reference keyed by
+metric name. This is a convenience wrapper around L</collect> with no
+arguments.
+
+=head2 collect
+
+    my $subset = Sys::Monitor::Lite::collect(['cpu', 'mem']);
+
+Collects the metrics listed in the array reference (or list). Unknown
+metrics are ignored. The returned value matches the structure of
+L</collect_all> but contains only the requested keys.
+
+=head2 available_metrics
+
+    my @names = Sys::Monitor::Lite::available_metrics();
+
+Returns a sorted list of metric names that the module can collect.
+
+=head2 to_json
+
+    my $json = Sys::Monitor::Lite::to_json($data, pretty => 1);
+
+Serialises the supplied data structure to a JSON string using
+L<JSON::PP>. Pass C<pretty =E<gt> 1> to enable human-readable output.
+
+=head1 EXPORT
+
+This module does not export any symbols by default. Functions can be
+called with their fully-qualified names, e.g. C<Sys::Monitor::Lite::collect_all()>.
+
+=head1 SEE ALSO
+
+L<script/sys-monitor-lite> – command-line interface for this module.
+
+=head1 AUTHOR
+
+Shingo Kawamura E<lt>kpannakoota1@gmail.comE<gt>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2025 by Shingo Kawamura.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the MIT license included with this distribution.
+
