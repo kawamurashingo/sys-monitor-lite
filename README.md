@@ -1,24 +1,24 @@
 # Sys::Monitor::Lite
 
-軽量なシステム監視ツールキット。`script/sys-monitor-lite` スクリプトを使って Linux 上の CPU / メモリ / ディスク / ネットワークなどのメトリクスを JSON 形式で取得できます。Perl のみで完結し、外部依存はありません。
+A lightweight system monitoring toolkit. Using the `script/sys-monitor-lite` script you can collect CPU, memory, disk, network, and other Linux metrics in JSON format. It runs entirely on Perl with no external dependencies.
 
-## 特徴
+## Features
 
-- `/proc` 以下の情報を読み取るだけの軽量実装
-- CPU、ロードアベレージ、メモリ、ディスク、ネットワーク、システム情報を収集
-- 収集するメトリクスを CLI から選択可能
-- JSON / JSON Lines 出力に対応し、`--pretty` オプションで整形も可能
-- モジュール (`Sys::Monitor::Lite`) としても利用でき、スクリプトから再利用しやすい
+- Lightweight implementation that simply reads data from `/proc`
+- Collects CPU, load average, memory, disk, network, and system information
+- Allows you to choose which metrics to collect from the CLI
+- Supports JSON / JSON Lines output, with `--pretty` for formatted JSON
+- Reusable as a module (`Sys::Monitor::Lite`) so scripts can integrate it easily
 
-## インストール
+## Installation
 
-CPAN からインストールする場合:
+To install from CPAN:
 
 ```bash
 cpanm Sys::Monitor::Lite
 ```
 
-リポジトリから直接利用する場合:
+To use it directly from the repository:
 
 ```bash
 git clone https://github.com/yourname/sys-monitor-lite.git
@@ -26,46 +26,46 @@ cd sys-monitor-lite
 perl Makefile.PL && make install
 ```
 
-インストールせずにリポジトリ内のスクリプトを直接実行することもできます。
+You can also run the scripts in the repository directly without installing.
 
-## 使い方 (コマンドライン)
+## Usage (Command Line)
 
-### 単発でメトリクスを収集
+### Collect metrics once
 
 ```bash
 script/sys-monitor-lite --once
 ```
 
-### 5 秒間隔で継続的に収集 (デフォルト)
+### Collect continuously at 5-second intervals (default)
 
 ```bash
 script/sys-monitor-lite --interval 5
 ```
 
-### 収集メトリクスを絞り込み、JSON Lines で出力
+### Limit the metrics collected and output as JSON Lines
 
 ```bash
 script/sys-monitor-lite --interval 10 --collect cpu,mem,disk --output jsonl
 ```
 
-### 主なオプション
+### Key options
 
-| オプション | 説明 |
+| Option | Description |
 | ----------- | ---- |
-| `--interval <秒>` | 繰り返し収集する間隔を指定します。デフォルトは 5 秒。0 以下の場合は単発になります。 |
-| `--once` | 単発で 1 度だけ収集します。`--interval` が指定されていない場合は同等の挙動になります。 |
-| `--collect <リスト>` | `system,cpu,load,mem,disk,net` からカンマ区切りで収集対象を指定します。 |
-| `--output <形式>` | `json` (デフォルト) か `jsonl` を指定できます。 |
-| `--pretty` | JSON 出力を整形します (`jsonl` の場合は無効)。 |
-| `--help` | ヘルプ (POD) を表示します。 |
+| `--interval <seconds>` | Interval for repeated collection. Defaults to 5 seconds. Values ≤ 0 collect only once. |
+| `--once` | Collects metrics once. Equivalent to omitting `--interval`. |
+| `--collect <list>` | Comma-separated list selecting from `system,cpu,load,mem,disk,net`. |
+| `--output <format>` | Choose `json` (default) or `jsonl`. |
+| `--pretty` | Format JSON output (`jsonl` ignores this). |
+| `--help` | Show help (POD). |
 
-JSON 出力は `jq` や `jq-lite` などのツールと組み合わせて扱えます。
+The JSON output can be combined with tools such as `jq` or `jq-lite`.
 
 ```bash
 script/sys-monitor-lite --once | jq '.mem.used_pct'
 ```
 
-## Perl モジュールとして利用する
+## Using as a Perl Module
 
 ```perl
 use Sys::Monitor::Lite qw(collect_all to_json);
@@ -74,21 +74,21 @@ my $metrics = collect_all();
 print to_json($metrics, pretty => 1);
 ```
 
-`collect_all` の代わりに `collect(["cpu", "mem"])` のように配列リファレンスでメトリクスを指定することも可能です。
+Instead of `collect_all`, you can pass an array reference like `collect(["cpu", "mem"])` to specify which metrics to gather.
 
-## 取得できるデータ
+## Available Data
 
-- `system`: OS 名、カーネルバージョン、ホスト名、アーキテクチャ、稼働時間 (秒)
-- `cpu`: コア数と総合 CPU 利用率 (直近 ~100ms の差分)
-- `load`: 1/5/15 分ロードアベレージ
-- `mem`: メモリの総量・使用量・空き容量、スワップ使用量
-- `disk`: マウントポイントごとの総容量・使用容量・使用率
-- `net`: インターフェースごとの受信/送信バイト数・パケット数
+- `system`: OS name, kernel version, hostname, architecture, uptime (seconds)
+- `cpu`: Number of cores and aggregate CPU utilization (difference over ~100 ms)
+- `load`: Load average over 1, 5, and 15 minutes
+- `mem`: Total, used, and free memory, plus swap usage
+- `disk`: Total capacity, used capacity, and utilization for each mount point
+- `net`: Received/sent bytes and packets per interface
 
-## ライセンス
+## License
 
 MIT License
 
-## 作者
+## Author
 
 Shingo Kawamura ([@kawamurashingo](https://github.com/kawamurashingo))

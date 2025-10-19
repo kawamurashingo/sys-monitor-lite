@@ -1,136 +1,133 @@
 # 🌍 Sys::Monitor::Lite — Vision
 
-## 概要
+## Overview
 
-`Sys::Monitor::Lite` は、軽量・JSON出力型のシステム監視モジュールです。
-その目的は、単なる便利ツールの開発ではなく、**ITインフラの民主化と観測性（observability）の分散進化を後押しすること** にあります。
+`Sys::Monitor::Lite` is a lightweight system monitoring module that outputs JSON.
+Its purpose is not merely to build another handy tool, but to **promote the democratization of IT infrastructure and the distributed evolution of observability**.
 
-このプロジェクトは、世界中のあらゆる環境に「軽くて、自由で、機械にも人にも理解できる監視」を届けることを目指しています。
-
----
-
-## 🌍 1. 軽量監視の世界的ニーズに応える
-
-多くの監視システム（Prometheus, Datadog など）は強力ですが、
-世界の大多数を占める中小規模環境には **過剰** です。
-
-たとえば：
-
-* 小規模クラウドやオンプレ環境
-* 教育機関・自治体・研究室・個人開発者
-* IoT ノードや家庭用 Linux サーバ
-
-これらの環境では次のような課題があります：
-
-* 重い監視基盤を動かすリソースがない
-* けれども CPU / メモリ / ディスクを標準化して監視したい
-* cron やシェルスクリプトで扱える単純さが求められる
-
-`Sys::Monitor::Lite` は、そうした現場に「**軽量な観測層**」を提供します。
+This project aims to deliver "lightweight, open, and human- and machine-readable monitoring" to every environment across the globe.
 
 ---
 
-## 💾 2. JSONフォーマットによる共通言語化
+## 🌍 1. Meeting the Global Demand for Lightweight Monitoring
 
-世界の監視・テレメトリ基盤は、今や **JSON** を共通言語としています。
+Many monitoring systems (Prometheus, Datadog, etc.) are powerful,
+but they are **overkill** for the small to medium environments that make up the vast majority of the world.
+
+For example:
+
+* Small-scale cloud or on-prem environments
+* Educational institutions, municipalities, research labs, individual developers
+* IoT nodes and home Linux servers
+
+These environments face challenges such as:
+
+* Lacking the resources to run heavy monitoring stacks
+* Still needing standardized monitoring for CPU / memory / disks
+* Requiring simplicity that can be handled with cron or shell scripts
+
+`Sys::Monitor::Lite` provides these teams with a **lightweight observability layer**.
+
+---
+
+## 💾 2. Creating a Common Language with JSON
+
+Monitoring and telemetry platforms worldwide now use **JSON** as their common language.
 
 * OpenTelemetry
-* CloudWatch / Azure Monitor / Datadog API
-* jq / jq-lite / Python / Node.js でのデータ処理
+* CloudWatch / Azure Monitor / Datadog APIs
+* Data processing with jq / jq-lite / Python / Node.js
 
-`Sys::Monitor::Lite` は **JSON をネイティブ出力形式** として採用することで：
+By adopting **JSON as the native output format**, `Sys::Monitor::Lite` can:
 
-* Fluent Bit や Logstash に直接パイプできる
-* AI / LLM による解析が容易
-* jq-lite と組み合わせて “監視 → 分析 → 通知” が1行で完結
+* Pipe directly into Fluent Bit or Logstash
+* Be easily analyzed by AI / LLMs
+* Complete the "monitor → analyze → notify" loop in one line when combined with jq-lite
 
-これにより、Perlを中心としたシンプルな監視エコシステムを他言語と橋渡しします。
-
----
-
-## 🐪 3. Perl再評価への道
-
-Perl は「古いが強い」言語として知られていますが、
-軽量ツールの分野では今もなお圧倒的な適性を持っています。
-
-`Sys::Monitor::Lite` と `jq-lite` は共に：
-
-* 依存が少なく、移植性が高い
-* CLI とモジュールの両面で動作
-* JSON中心のモダン設計
-
-これにより、Perlは「**軽量システムユーティリティ言語**」として再評価される可能性を取り戻します。
-特に `/proc` などを直接扱えるLinux向けの親和性は他言語にない強みです。
+This bridges a simple, Perl-centric monitoring ecosystem with other languages.
 
 ---
 
-## 🌐 4. オープン観測性（Open Observability）の推進
+## 🐪 3. Paving the Way for a Perl Renaissance
 
-現代の監視はクラウド依存・ベンダーロックインが進んでいます。
-`Sys::Monitor::Lite` は、そうした閉鎖的な観測文化に対し **自由な選択肢** を提供します。
+Perl is known as an "old but mighty" language,
+and it still excels at building lightweight tools.
 
-* ベンダーに依存しない OSS
-* オフライン・閉域環境でも動作
-* JSON によるデータの再利用・共有が容易
+Together, `Sys::Monitor::Lite` and `jq-lite`:
 
-「**Observability Freedom（観測の自由）**」を世界に広げることが、このプロジェクトの使命です。
+* Keep dependencies minimal and portability high
+* Run both as CLIs and modules
+* Embrace a modern, JSON-first design
 
----
-
-## ⚡ 5. Infrastructure-as-Text 時代への備え
-
-IaC（Infrastructure as Code）を超え、
-今は **Infrastructure as Text / Telemetry as JSON** の時代へ向かっています。
-
-監視データや構成を「テキスト」として保存・解析できることで：
-
-* Git で履歴を追える
-* ChatGPT / LLM による自動分析が可能
-* jq-lite で人間にも機械にも読みやすい形式に変換
-
-`Sys::Monitor::Lite` は、こうした **AI時代の運用自動化（AIOps）基盤** の一部として機能します。
+This gives Perl a new chance to be recognized as a **lightweight systems utility language**.
+Its affinity for Linux environments—directly handling `/proc`, for example—is a strength unmatched by other languages.
 
 ---
 
-## 🚀 6. オープンモジュールによる進化連鎖
+## 🌐 4. Advancing Open Observability
 
-`jq-lite` と `Sys::Monitor::Lite` が揃うことで、
-Perl圏で初めて “観測 → フィルタ → 判断 → 通知” の流れが完結します。
+Modern monitoring is increasingly cloud-dependent and vendor-locked.
+`Sys::Monitor::Lite` offers a **free alternative** to that closed culture of observability.
+
+* OSS without vendor lock-in
+* Operates in offline or air-gapped environments
+* Makes it easy to reuse and share data through JSON
+
+Spreading **Observability Freedom** around the world is the mission of this project.
+
+---
+
+## ⚡ 5. Preparing for the Infrastructure-as-Text Era
+
+We are moving beyond IaC (Infrastructure as Code) toward an era of **Infrastructure as Text / Telemetry as JSON**.
+
+Storing and analyzing monitoring data and configurations as "text" enables:
+
+* Tracking history with Git
+* Automated analysis via ChatGPT / LLMs
+* Converting data into human- and machine-friendly formats with jq-lite
+
+`Sys::Monitor::Lite` functions as part of an **AIOps foundation for the age of AI-driven operations automation**.
+
+---
+
+## 🚀 6. Evolution Through Open Modules
+
+With `jq-lite` and `Sys::Monitor::Lite` together,
+Perl gains, for the first time, a complete flow of "observe → filter → decide → notify".
 
 ```bash
-Sys::Monitor::Lite  →  JSON出力
+Sys::Monitor::Lite  →  JSON output
       ↓
-jq-lite              →  条件抽出・加工
+jq-lite              →  Conditional extraction / processing
       ↓
-CLI / Bot / Script   →  通知・記録
+CLI / Bot / Script   →  Notification / logging
 ```
 
-この構成は、小規模クラウド・自作Kubernetes・研究環境・IoT など
-世界中の現場で “Perlだけで完結する監視系” を可能にします。
+This setup makes it possible to build "monitoring stacks that run entirely on Perl"
+in small clouds, DIY Kubernetes clusters, research environments, IoT deployments, and beyond around the world.
 
 ---
 
-## ✨ 世界的意義のまとめ
+## ✨ Summary of Global Impact
 
-| 観点       | 意義                          |
-| -------- | --------------------------- |
-| 🌍 社会的   | 軽量で自由な監視をすべての環境に提供          |
-| 💾 技術的   | JSONによる観測データの国際標準化と他言語連携    |
-| 🐪 Perl的 | Perlの再評価・再活性化、モダンユーティリティの創出 |
-| ⚙️ 運用的   | クラウド依存しない「オープン観測性」の推進       |
-| 🤖 未来的   | AI/LLMによる自動分析・自律運用の基盤形成     |
-
----
-
-## 📝 結語
-
-`Sys::Monitor::Lite` は単なるモジュールではありません。
-それは「観測データをすべての人に開放する」という思想そのものです。
-
-このプロジェクトが、
-**小さくても確かな自由な監視文化**を世界に広げる一助となることを願っています。
+| Perspective | Impact |
+| ----------- | ------ |
+| 🌍 Social    | Provides lightweight, open monitoring to every environment |
+| 💾 Technical | Standardizes observability data with JSON and bridges to other languages |
+| 🐪 Perl      | Revitalizes Perl through modern utilities and renewed recognition |
+| ⚙️ Operational | Promotes "open observability" without cloud dependency |
+| 🤖 Future    | Builds a foundation for AI/LLM-driven automation and autonomous operations |
 
 ---
 
-（c）2025 Shingo Kawamura
+## 📝 Conclusion
 
+`Sys::Monitor::Lite` is more than just a module.
+It embodies the philosophy of "opening observability data to everyone."
+
+We hope this project helps spread a **small yet dependable culture of free monitoring** throughout the world.
+
+---
+
+© 2025 Shingo Kawamura
