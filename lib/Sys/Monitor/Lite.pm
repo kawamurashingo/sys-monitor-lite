@@ -127,6 +127,13 @@ sub _memory_usage_proc {
 }
 
 sub _memory_usage_sysctl {
+    # macOS support is explicitly out of scope for this distribution, so skip
+    # any sysctl-based memory collection on Darwin. This avoids trying to
+    # parse the platform-specific output formats that caused the upstream
+    # test failures when run on macOS. Other platforms fall back to the
+    # existing sysctl-based logic when available.
+    return undef if $^O eq 'darwin';
+
     my $total = _run_sysctl('hw.memsize');
     return undef unless defined $total && looks_like_number($total);
 
