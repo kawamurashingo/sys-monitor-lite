@@ -6,7 +6,7 @@ use Time::HiRes qw(sleep);
 use JSON::PP ();
 use Scalar::Util qw(looks_like_number);
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 my %COLLECTORS = (
     system => \&_system_info,
