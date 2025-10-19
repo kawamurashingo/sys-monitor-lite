@@ -12,6 +12,7 @@ my $once     = 0;
 my $collect  = undef;
 my $output   = 'json';
 my $pretty   = 0;
+my $human    = 0;
 my $help     = 0;
 
 GetOptions(
@@ -20,6 +21,7 @@ GetOptions(
     'collect=s'  => \$collect,
     'output=s'   => \$output,
     'pretty!'    => \$pretty,
+    'human!'     => \$human,
     'help'       => \$help,
 ) or pod2usage(2);
 
@@ -47,6 +49,8 @@ while (1) {
     my $data = @metrics
         ? Sys::Monitor::Lite::collect(\@metrics)
         : Sys::Monitor::Lite::collect_all();
+
+    Sys::Monitor::Lite::add_human_readable_units($data) if $human;
 
     my %opts = $encoder_pretty ? (pretty => 1) : ();
     my $json = Sys::Monitor::Lite::to_json($data, %opts);
@@ -102,6 +106,11 @@ Output format: C<json> (default) or C<jsonl> for JSON Lines.
 =item B<--pretty>
 
 Pretty-print JSON output (ignored for JSON Lines).
+
+=item B<--human>
+
+Augment the output with human-readable counterparts for byte and uptime
+values (e.g. ``GiB'', ``MiB'', ``1d 2h'').
 
 =item B<--help>
 

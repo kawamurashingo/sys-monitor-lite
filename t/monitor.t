@@ -33,6 +33,27 @@ subtest 'collect_all structure' => sub {
     isa_ok($data->{net}, 'ARRAY', 'net data');
 };
 
+subtest 'human readable augmentation' => sub {
+    my $data = Sys::Monitor::Lite::collect_all();
+    Sys::Monitor::Lite::add_human_readable_units($data);
+
+    ok($data->{system}{uptime_human}, 'uptime_human present');
+    like($data->{mem}{total_bytes_human} // '', qr/\b[KMGTPEZY]?i?B\b/, 'mem total human readable');
+    like($data->{mem}{swap}{total_bytes_human} // '', qr/\b[KMGTPEZY]?i?B\b/, 'swap total human readable');
+
+    if (@{ $data->{disk} }) {
+        ok($data->{disk}[0]{total_bytes_human}, 'disk human readable field added');
+    } else {
+        pass('no disk entries to test human readable conversion');
+    }
+
+    if (@{ $data->{net} }) {
+        ok(exists $data->{net}[0]{rx_bytes_human}, 'net human readable field added');
+    } else {
+        pass('no network entries to test human readable conversion');
+    }
+};
+
 subtest 'selective collect' => sub {
     my $data = Sys::Monitor::Lite::collect(['system', 'cpu']);
     isa_ok($data, 'HASH', 'collect returns hashref');
@@ -57,6 +78,12 @@ subtest 'cli integration' => sub {
     my $decoded = eval { JSON::PP->new->decode($output) };
     ok(!$@, 'cli output is valid JSON');
     isa_ok($decoded->{system}, 'HASH', 'cli returned system data');
+
+    my $human_output = qx{$perl $script --once --collect mem --output json --human};
+    ok($? == 0, 'cli exited successfully with --human');
+    my $decoded_human = eval { JSON::PP->new->decode($human_output) };
+    ok(!$@, 'cli --human output is valid JSON');
+    like($decoded_human->{mem}{total_bytes_human} // '', qr/\b[KMGTPEZY]?i?B\b/, '--human output contains human readable value');
 };
 # ensure subtests run before done_testing
 
