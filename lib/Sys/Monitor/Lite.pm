@@ -6,7 +6,7 @@ use Time::HiRes qw(sleep);
 use JSON::PP ();
 use Scalar::Util qw(looks_like_number);
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 my %COLLECTORS = (
     system => \&_system_info,
@@ -240,6 +240,49 @@ sub to_json {
     return $encoder->encode($data);
 }
 
+sub add_human_readable_units {
+    my ($data) = @_;
+    return $data unless ref $data eq 'HASH';
+
+    if (my $system = $data->{system}) {
+        if (ref $system eq 'HASH' && exists $system->{uptime_sec}) {
+            my $human = _human_duration($system->{uptime_sec});
+            $system->{uptime_human} = $human if defined $human;
+        }
+    }
+
+    if (my $mem = $data->{mem}) {
+        if (ref $mem eq 'HASH') {
+            _add_bytes_human($mem, qw(total_bytes available_bytes used_bytes free_bytes buffers_bytes cached_bytes));
+            if (my $swap = $mem->{swap}) {
+                if (ref $swap eq 'HASH') {
+                    _add_bytes_human($swap, qw(total_bytes used_bytes free_bytes));
+                }
+            }
+        }
+    }
+
+    if (my $disk = $data->{disk}) {
+        if (ref $disk eq 'ARRAY') {
+            for my $entry (@$disk) {
+                next unless ref $entry eq 'HASH';
+                _add_bytes_human($entry, qw(total_bytes used_bytes free_bytes));
+            }
+        }
+    }
+
+    if (my $net = $data->{net}) {
+        if (ref $net eq 'ARRAY') {
+            for my $iface (@$net) {
+                next unless ref $iface eq 'HASH';
+                _add_bytes_human($iface, qw(rx_bytes tx_bytes));
+            }
+        }
+    }
+
+    return $data;
+}
+
 sub _timestamp {
     my @t = gmtime();
     return sprintf("%04d-%02d-%02dT%02d:%02d:%02dZ", $t[5]+1900,$t[4]+1,@t[3,2,1,0]);
@@ -253,6 +296,16 @@ sub _percent {
     my ($num, $den) = @_;
     return 0 unless defined $num && defined $den && $den;
     return sprintf('%.1f', ($num / $den) * 100);
+}
+
+sub _add_bytes_human {
+    my ($hash, @fields) = @_;
+    for my $field (@fields) {
+        next unless exists $hash->{$field};
+        my $value = $hash->{$field};
+        my $human = _human_bytes($value);
+        $hash->{ $field . '_human' } = $human if defined $human;
+    }
 }
 
 sub _uptime_seconds {
@@ -278,6 +331,51 @@ sub _maybe_number {
     my ($value) = @_;
     return undef unless defined $value;
     return looks_like_number($value) ? 0 + $value : $value;
+}
+
+sub _human_bytes {
+    my ($value) = @_;
+    return undef unless defined $value && looks_like_number($value);
+
+    my $bytes = $value + 0;
+    my @units = qw(B KiB MiB GiB TiB PiB EiB ZiB YiB);
+    my $idx = 0;
+    while (abs($bytes) >= 1024 && $idx < $#units) {
+        $bytes /= 1024;
+        $idx++;
+    }
+
+    my $format = ($idx == 0 || abs($bytes) >= 10) ? '%.0f %s' : '%.1f %s';
+    return sprintf($format, $bytes, $units[$idx]);
+}
+
+sub _human_duration {
+    my ($seconds) = @_;
+    return undef unless defined $seconds && looks_like_number($seconds);
+
+    my $remaining = int($seconds + 0.5);
+    $remaining = 0 if $remaining < 0;
+
+    my @units = (
+        [86400, 'd'],
+        [3600,  'h'],
+        [60,    'm'],
+        [1,     's'],
+    );
+    my @parts;
+    for my $unit (@units) {
+        my ($size, $label) = @$unit;
+        next if $remaining < $size && $label ne 's' && !@parts;
+        my $value = int($remaining / $size);
+        if ($value > 0) {
+            push @parts, $value . $label;
+            $remaining -= $value * $size;
+        } elsif ($label eq 's' && !@parts) {
+            push @parts, '0s';
+        }
+    }
+
+    return join ' ', @parts;
 }
 
 1;
@@ -327,6 +425,15 @@ Returns a sorted list of metric names that the module can collect.
 
 Serialises the supplied data structure to a JSON string using
 L<JSON::PP>. Pass C<pretty =E<gt> 1> to enable human-readable output.
+
+=head2 add_human_readable_units
+
+    Sys::Monitor::Lite::add_human_readable_units($data);
+
+Enhances the collected metrics by adding keys that express byte counts
+and uptime values in a human-readable manner. Numeric fields remain
+untouched while additional keys suffixed with C<_human> (or
+C<uptime_human>) are added alongside them.
 
 =head1 EXPORT
 
