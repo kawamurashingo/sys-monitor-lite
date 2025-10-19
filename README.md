@@ -1,69 +1,24 @@
-
-# 📘 README Structure
-
-## 1. Title & Tagline
-
-```markdown
 # Sys::Monitor::Lite
-*A lightweight system monitoring toolkit for Linux, written in pure Perl.*
 
-Collect CPU, memory, disk, network, and process metrics — all in clean JSON.  
-Perfect for automation, DevOps pipelines, and integration with [jq-lite](https://metacpan.org/pod/JQ::Lite).
-```
+軽量なシステム監視ツールキット。`script/sys-monitor-lite` スクリプトを使って Linux 上の CPU / メモリ / ディスク / ネットワークなどのメトリクスを JSON 形式で取得できます。Perl のみで完結し、外部依存はありません。
 
----
+## 特徴
 
-## 2. Motivation / Why It Exists
+- `/proc` 以下の情報を読み取るだけの軽量実装
+- CPU、ロードアベレージ、メモリ、ディスク、ネットワーク、システム情報を収集
+- 収集するメトリクスを CLI から選択可能
+- JSON / JSON Lines 出力に対応し、`--pretty` オプションで整形も可能
+- モジュール (`Sys::Monitor::Lite`) としても利用でき、スクリプトから再利用しやすい
 
-```markdown
-## 🌍 Why Sys::Monitor::Lite?
+## インストール
 
-Modern observability tools like Prometheus or Datadog are powerful — but heavy.  
-In small-scale environments, embedded systems, and private datacenters,  
-administrators still need **a fast, dependency-free way to monitor system health**.
+CPAN からインストールする場合:
 
-`Sys::Monitor::Lite` was created for that world:
-- Works on any Linux system (no root required)
-- Outputs structured **JSON telemetry**
-- Easily combined with `jq-lite`, shell pipelines, or custom scripts
-- Zero external dependencies (uses `/proc` and core Perl only)
-
-It's **lightweight observability for everyone**, from IoT to HPC.
-```
-
----
-
-## 3. Features
-
-```markdown
-## ✨ Features
-
-- 🧠 **Simple & Fast** — no agents, daemons, or daemons needed.
-- ⚙️ **Collects Key Metrics**
-  - CPU usage, load average
-  - Memory, swap
-  - Disk usage and filesystem stats
-  - Network I/O per interface
-  - Process and system uptime info
-- 🧾 **JSON Output** — perfect for data pipelines and automation.
-- 🧩 **Integrates with jq-lite** — filter and analyze metrics directly.
-- 🧱 **Modular Design** — extend collectors easily (`Sys::Monitor::Lite::Collector::*`).
-- 🧰 **CLI or Perl API** — run as command or import as a module.
-```
-
----
-
-## 4. Installation
-
-````markdown
-## 📦 Installation
-
-From CPAN:
 ```bash
 cpanm Sys::Monitor::Lite
-````
+```
 
-Or from GitHub:
+リポジトリから直接利用する場合:
 
 ```bash
 git clone https://github.com/yourname/sys-monitor-lite.git
@@ -71,147 +26,69 @@ cd sys-monitor-lite
 perl Makefile.PL && make install
 ```
 
-````
+インストールせずにリポジトリ内のスクリプトを直接実行することもできます。
 
----
+## 使い方 (コマンドライン)
 
-## 5. Usage
-```markdown
-## 🚀 Usage
-
-### Command line interface
-
-Run `sys-monitor-lite` directly after installation.
+### 単発でメトリクスを収集
 
 ```bash
-# Take a single snapshot (default behaviour)
-sys-monitor-lite --once
-
-# Sample every 10 seconds and pretty print JSON
-sys-monitor-lite --interval 10 --pretty
-
-# Emit newline-delimited JSON and limit to specific metrics
-sys-monitor-lite --interval 5 --collect cpu,mem,disk --output jsonl
+script/sys-monitor-lite --once
 ```
 
-#### CLI options
-
-| Option | Description |
-| ------ | ----------- |
-| `--interval <seconds>` | Collect metrics repeatedly every _n_ seconds (defaults to `5` when running continuously). |
-| `--once` | Exit after a single collection (default when `--interval` is not supplied). |
-| `--collect <list>` | Comma-separated list of metrics to gather (e.g. `cpu,mem,disk`). Available metrics: `system`, `cpu`, `load`, `mem`, `disk`, `net`. |
-| `--output <format>` | Output `json` (default) or `jsonl` for JSON Lines. |
-| `--pretty` | Pretty-print JSON (ignored when `--output jsonl`). |
-| `--help` | Show built-in help and exit. |
-
-Pipe the JSON output into tools like `jq-lite` for ad-hoc filtering:
+### 5 秒間隔で継続的に収集 (デフォルト)
 
 ```bash
-sys-monitor-lite --once | jq-lite '.disk[] | select(.used_pct > 80)'
+script/sys-monitor-lite --interval 5
 ```
 
-### As a Perl module
+### 収集メトリクスを絞り込み、JSON Lines で出力
+
+```bash
+script/sys-monitor-lite --interval 10 --collect cpu,mem,disk --output jsonl
+```
+
+### 主なオプション
+
+| オプション | 説明 |
+| ----------- | ---- |
+| `--interval <秒>` | 繰り返し収集する間隔を指定します。デフォルトは 5 秒。0 以下の場合は単発になります。 |
+| `--once` | 単発で 1 度だけ収集します。`--interval` が指定されていない場合は同等の挙動になります。 |
+| `--collect <リスト>` | `system,cpu,load,mem,disk,net` からカンマ区切りで収集対象を指定します。 |
+| `--output <形式>` | `json` (デフォルト) か `jsonl` を指定できます。 |
+| `--pretty` | JSON 出力を整形します (`jsonl` の場合は無効)。 |
+| `--help` | ヘルプ (POD) を表示します。 |
+
+JSON 出力は `jq` や `jq-lite` などのツールと組み合わせて扱えます。
+
+```bash
+script/sys-monitor-lite --once | jq '.mem.used_pct'
+```
+
+## Perl モジュールとして利用する
 
 ```perl
 use Sys::Monitor::Lite qw(collect_all to_json);
 
-my $data = collect_all();
-print to_json($data, pretty => 1);
+my $metrics = collect_all();
+print to_json($metrics, pretty => 1);
 ```
 
-````
+`collect_all` の代わりに `collect(["cpu", "mem"])` のように配列リファレンスでメトリクスを指定することも可能です。
 
----
+## 取得できるデータ
 
-## 6. Example Output
-```markdown
-## 📊 Example JSON Output
+- `system`: OS 名、カーネルバージョン、ホスト名、アーキテクチャ、稼働時間 (秒)
+- `cpu`: コア数と総合 CPU 利用率 (直近 ~100ms の差分)
+- `load`: 1/5/15 分ロードアベレージ
+- `mem`: メモリの総量・使用量・空き容量、スワップ使用量
+- `disk`: マウントポイントごとの総容量・使用容量・使用率
+- `net`: インターフェースごとの受信/送信バイト数・パケット数
 
-```json
-{
-  "timestamp": "2025-10-19T12:34:56Z",
-  "system": { "os": "Linux", "kernel": "5.15.0", "uptime_sec": 123456 },
-  "cpu": { "cores": 8, "usage_pct": { "total": 7.3 } },
-  "mem": { "total_bytes": 33554432000, "used_bytes": 1234567890 },
-  "disk": [
-    { "mount": "/", "used_pct": 23.0 }
-  ],
-  "net": [
-    { "iface": "eth0", "rx_bytes": 123456789, "tx_bytes": 987654321 }
-  ]
-}
-````
-
-````
-
----
-
-## 7. Integration & Ecosystem
-```markdown
-## 🔗 Integration
-
-`Sys::Monitor::Lite` speaks JSON, so it works with anything:
-
-| Tool | Example |
-|------|----------|
-| **jq-lite** | `sys-monitor-lite | jq-lite '.cpu.usage_pct.total'` |
-| **Fluent Bit / Logstash** | Stream JSON directly to a collector |
-| **Prometheus** | Use `--prometheus` mode to export metrics |
-| **Nagios** | Use `--nagios` mode for simple threshold checks |
-| **AI Ops** | Feed the JSON into LLMs for automated health summaries |
-
-````
-
----
-
-## 8. Philosophy
-
-```markdown
-## 🧭 Philosophy
-
-> “Observability should be simple, open, and scriptable.”
-
-`Sys::Monitor::Lite` promotes **Open Observability**:
-- No vendor lock-in
-- No heavy daemons or hidden telemetry
-- 100% open source, readable, and hackable
-```
-
----
-
-## 9. Roadmap
-
-```markdown
-## 🗺️ Roadmap
-
-| Version | Focus |
-|----------|-------|
-| v0.1 | Basic metrics (CPU, mem, disk, net, system) |
-| v0.2 | Prometheus & Nagios output, `jq-lite` filter integration |
-| v0.3 | macOS / BSD fallback support |
-| v0.4 | Process & inode metrics, extended schema |
-```
-
----
-
-## 10. License & Author
-
-```markdown
-## 📄 License
+## ライセンス
 
 MIT License
 
-## 👤 Author
+## 作者
 
-**Shingo Kawamura**  
-GitHub: [@kawamurashingo](https://github.com/kawamurashingo)
-```
-
----
-
-## 🔥 Tagline for Reddit / Hacker News Post
-
-> “Perl isn’t dead — it’s monitoring your system.”
-> Introducing **Sys::Monitor::Lite**, a zero-dependency JSON system monitor that pairs perfectly with `jq-lite`.
-
+Shingo Kawamura ([@kawamurashingo](https://github.com/kawamurashingo))
