@@ -318,11 +318,11 @@ L<script/sys-monitor-lite> – command-line interface for this module.
 
 =head1 AUTHOR
 
-Shingo Kawamura E<lt>kawamurashingo@cpan.orgE<gt>
+Shingo Kawamura E<lt>kpannakoota1@gmail.comE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2024 by Shingo Kawamura.
+This software is copyright (c) 2025 by Shingo Kawamura.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the MIT license included with this distribution.
