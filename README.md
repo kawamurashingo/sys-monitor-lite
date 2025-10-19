@@ -1,5 +1,5 @@
 
-# 📘 README Structure (English Version)
+# 📘 README Structure
 
 ## 1. Title & Tagline
 
