@@ -123,18 +123,31 @@ sub _disk_usage {
     open my $fh, '<', '/proc/mounts' or return [];
     my %seen;
     my @disks;
+    my $has_statvfs = POSIX->can('statvfs');
+    my $df_stats    = $has_statvfs ? undef : _df_stats();
     while (my $line = <$fh>) {
         my ($device, $mount, $type) = (split /\s+/, $line)[0..2];
         next if $seen{$mount}++;
         next if $mount =~ m{^/(?:proc|sys|dev|run|snap)};
         next if $type =~ /^(?:proc|sysfs|tmpfs|devtmpfs|cgroup.+|rpc_pipefs|overlay)$/;
+        next unless defined $mount && length $mount;
+        next unless -d $mount;
 
-        my @stat = eval { POSIX::statvfs($mount) };
-        next unless @stat;
-        my ($bsize, $frsize, $blocks, $bfree, $bavail) = @stat;
-        my $total = $blocks * $frsize;
-        my $free  = $bavail * $frsize;
-        my $used  = $total - ($bfree * $frsize);
+        my ($total, $used, $free);
+        if ($has_statvfs) {
+            my @stat = eval { POSIX::statvfs($mount) };
+            next unless @stat;
+            my ($bsize, $frsize, $blocks, $bfree, $bavail) = @stat;
+            $total = $blocks * $frsize;
+            $free  = $bavail * $frsize;
+            $used  = $total - ($bfree * $frsize);
+        } else {
+            my $info = $df_stats->{$mount};
+            next unless $info;
+            $total = $info->{total};
+            $used  = $info->{used};
+            $free  = $info->{avail};
+        }
 
         push @disks, {
             mount        => $mount,
@@ -170,6 +183,31 @@ sub _network_io {
     }
     close $fh;
     return \@ifaces;
+}
+
+sub _df_stats {
+    open my $df, '-|', 'df', '-P', '-k' or return {};
+    my %stats;
+    my $header = <$df>;
+    while (my $line = <$df>) {
+        chomp $line;
+        $line =~ s/^\s+//;
+        my @fields = split /\s+/, $line;
+        next unless @fields >= 6;
+        my ($fs, $blocks, $used, $avail, undef, $mount) = @fields[0,1,2,3,4,5];
+        my $total = _maybe_number($blocks);
+        my $used_bytes = _maybe_number($used);
+        my $avail_bytes = _maybe_number($avail);
+        next unless defined $mount && defined $total && defined $used_bytes && defined $avail_bytes;
+        $stats{$mount} = {
+            filesystem => $fs,
+            total      => $total * 1024,
+            used       => $used_bytes * 1024,
+            avail      => $avail_bytes * 1024,
+        };
+    }
+    close $df;
+    return \%stats;
 }
 
 sub to_json {
