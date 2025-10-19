@@ -75,39 +75,49 @@ perl Makefile.PL && make install
 
 ---
 
-## 5. Usage Examples
+## 5. Usage
 ```markdown
-## 🚀 Examples
+## 🚀 Usage
 
-### Basic one-shot collection
+### Command line interface
+
+Run `sys-monitor-lite` directly after installation.
+
 ```bash
+# Take a single snapshot (default behaviour)
 sys-monitor-lite --once
-````
 
-### Filter with jq-lite
+# Sample every 10 seconds and pretty print JSON
+sys-monitor-lite --interval 10 --pretty
+
+# Emit newline-delimited JSON and limit to specific metrics
+sys-monitor-lite --interval 5 --collect cpu,mem,disk --output jsonl
+```
+
+#### CLI options
+
+| Option | Description |
+| ------ | ----------- |
+| `--interval <seconds>` | Collect metrics repeatedly every _n_ seconds (defaults to `5` when running continuously). |
+| `--once` | Exit after a single collection (default when `--interval` is not supplied). |
+| `--collect <list>` | Comma-separated list of metrics to gather (e.g. `cpu,mem,disk`). Available metrics: `system`, `cpu`, `load`, `mem`, `disk`, `net`. |
+| `--output <format>` | Output `json` (default) or `jsonl` for JSON Lines. |
+| `--pretty` | Pretty-print JSON (ignored when `--output jsonl`). |
+| `--help` | Show built-in help and exit. |
+
+Pipe the JSON output into tools like `jq-lite` for ad-hoc filtering:
 
 ```bash
 sys-monitor-lite --once | jq-lite '.disk[] | select(.used_pct > 80)'
 ```
 
-### Continuous monitoring (JSON Lines output)
-
-```bash
-sys-monitor-lite --interval 5 --collect cpu,mem,disk --output jsonl
-```
-
-### Nagios-compatible check
-
-```bash
-sys-monitor-lite --nagios mem --threshold 'mem.used_pct > 90'
-```
-
 ### As a Perl module
 
 ```perl
-use Sys::Monitor::Lite 'collect_all';
+use Sys::Monitor::Lite qw(collect_all to_json);
+
 my $data = collect_all();
-print $data->{cpu}->{usage_pct}->{total}, "%\n";
+print to_json($data, pretty => 1);
 ```
 
 ````
