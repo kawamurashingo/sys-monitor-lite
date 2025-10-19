@@ -24,6 +24,12 @@ subtest 'collect_all structure' => sub {
     isa_ok($data->{load}, 'HASH', 'load data');
     isa_ok($data->{mem}, 'HASH', 'mem data');
     isa_ok($data->{disk}, 'ARRAY', 'disk data');
+    ok(@{ $data->{disk} } >= 1, 'at least one disk entry collected');
+    my $disk = $data->{disk}[0];
+    isa_ok($disk, 'HASH', 'disk entry structure');
+    for my $field (qw(mount filesystem type total_bytes used_bytes free_bytes used_pct)) {
+        ok(exists $disk->{$field}, "disk entry has $field");
+    }
     isa_ok($data->{net}, 'ARRAY', 'net data');
 };
 
