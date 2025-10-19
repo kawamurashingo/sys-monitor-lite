@@ -214,11 +214,20 @@ sub _df_stats {
         $line =~ s/^\s+//;
         my @fields = split /\s+/, $line;
         next unless @fields >= 6;
-        my ($fs, $blocks, $used, $avail, undef, $mount) = @fields[0,1,2,3,4,5];
+
+        my $mount = pop @fields;
+        my $capacity = pop @fields;    # ignored
+        my $avail = pop @fields;
+        my $used  = pop @fields;
+        my $blocks = pop @fields;
+        my $fs = join ' ', @fields;
+
         my $total = _maybe_number($blocks);
         my $used_bytes = _maybe_number($used);
         my $avail_bytes = _maybe_number($avail);
         next unless defined $mount && defined $total && defined $used_bytes && defined $avail_bytes;
+        next unless looks_like_number($total) && looks_like_number($used_bytes) && looks_like_number($avail_bytes);
+
         $stats{$mount} = {
             filesystem => $fs,
             type       => 'unknown',
