@@ -406,7 +406,7 @@ L<script/sys-monitor-lite> – command-line interface for this module.
 
 =head1 AUTHOR
 
-Shingo Kawamura E<lt>kpannakoota1@gmail.comE<gt>
+Shingo Kawamura E<lt>pannakoota1@gmail.comE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
